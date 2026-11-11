@@ -779,3 +779,17 @@ body{padding-bottom:0}
   .photo-note{display:flex;right:-4%;bottom:auto;top:58%}
 }
 @media (min-width:900px){ .photo-note{display:none} }
+
+/* Logo dạng hình vector (giống nhau trên mọi thiết bị) */
+.logo-img{display:block;height:auto}
+.logo-header{width:92px}
+.logo-footer{width:150px}
+@media (min-width:900px){ .logo-header{width:112px} }
+
+/* Điện thoại: ảnh nhân vật hiện trọn, không thẻ nào đè lên */
+@media (max-width:899px){
+  .hero-visual{width:min(100%,380px);padding-bottom:0}
+  .hero-detail,.photo-note,.hero-glow{display:none}
+  .rec-frame{width:100%;margin:0}
+  .rec-frame figcaption{position:static;max-width:none;margin:12px 0 0;border-radius:14px}
+}
