@@ -679,3 +679,69 @@ html{scroll-padding-top:calc(var(--header-h) + 30px)}
 
 /* Đã bỏ thanh giá nổi: không cần chừa khoảng trống dưới trang */
 body{padding-bottom:0}
+
+/* ===== Hero theo nội dung mới: tuyên bố + khối giá nổi bật ===== */
+.hero .eyebrow{text-transform:none;letter-spacing:.08em;font-size:12.5px}
+.hero-description strong{color:var(--bordo)}
+.hero-claim{margin-top:20px;padding:14px 16px;border-left:3px solid var(--bordo);border-radius:4px 14px 14px 4px;background:rgba(108,21,30,.06)}
+.claim-not{font-size:15px;color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(108,21,30,.5)}
+.claim-is{margin-top:4px;font-size:17px;font-weight:700;line-height:1.45;letter-spacing:-.01em;color:var(--ink)}
+
+.hero-price{position:relative;margin-top:22px;padding:20px 20px 18px;border-radius:24px;overflow:hidden;color:#fbefe3;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(245,218,191,.22),rgba(245,218,191,0) 55%),var(--sheen-dark),var(--glass-bordo);
+  -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+  border:1px solid rgba(255,255,255,.24);box-shadow:var(--glass-shadow-dark),0 0 0 6px rgba(108,21,30,.08)}
+.hero-price::after{content:"ƯU ĐÃI CỘNG ĐỒNG";position:absolute;top:16px;right:-38px;transform:rotate(35deg);padding:4px 44px;background:#f5dabf;color:var(--bordo);font-size:9.5px;font-weight:800;letter-spacing:.12em}
+.hp-old{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;font-size:14px;color:#f3dccb}
+.hp-old del{font-size:18px;font-weight:600;color:#fbefe3;text-decoration-thickness:2px;text-decoration-color:#f5dabf}
+.hp-special{margin-top:10px;max-width:24em;padding-right:52px;font-size:13px;font-weight:600;letter-spacing:.02em;line-height:1.45;color:#f5dabf}
+.hp-price{display:flex;align-items:flex-start;margin-top:2px;font-size:clamp(46px,13.5vw,66px);font-weight:700;line-height:1.05;letter-spacing:-.045em;color:#fff8ec;font-variant-numeric:tabular-nums}
+.hp-cur{font-size:.48em;margin:.12em 0 0 .06em}
+.hp-unit{align-self:flex-end;margin:0 0 .5em .35em;font-size:.26em;font-weight:600;letter-spacing:0;color:#f3dccb}
+.hero-price .button{width:100%;margin-top:14px;min-height:54px;font-size:16px;box-shadow:0 12px 24px -12px rgba(0,0,0,.45)}
+.hp-meta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:13px;color:#f3dccb}
+.hp-meta svg{width:16px;height:16px;color:#f5dabf}
+.hero-actions{margin-top:14px}
+
+/* Thẻ học phí: giá gốc */
+.price-old{margin-top:10px;font-size:14px;color:#f3dccb}
+.price-old del{font-size:17px;font-weight:600;color:#fbefe3;text-decoration-color:#f5dabf;text-decoration-thickness:2px}
+.price{margin-top:0}
+
+/* Câu nhấn "công thức" */
+.formula-quote{display:flex;gap:14px;align-items:flex-start;margin:0 0 36px;padding:22px 20px;border-radius:24px;background:var(--sheen),var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow)}
+.formula-quote svg{width:26px;height:26px;color:var(--bordo);fill:var(--bordo);margin-top:4px}
+.formula-quote p{font-family:var(--serif);font-size:clamp(20px,5.6vw,30px);line-height:1.4;letter-spacing:-.01em}
+.formula-quote strong{font-family:var(--font);font-weight:600;color:var(--bordo);letter-spacing:-.02em}
+
+/* Lời kết dài hơn */
+.closing h2{font-size:clamp(28px,7.6vw,46px)}
+
+@media (prefers-reduced-motion:no-preference){
+  .hero-claim,.hero-price{animation:fadeUp .5s var(--ease) both}
+  .hero-claim{animation-delay:.44s}
+  .hero-price{animation-delay:.52s}
+  .hero-price .button{animation:pricePulse 2.8s 1.6s ease-in-out 2}
+}
+@keyframes pricePulse{0%,100%{box-shadow:0 12px 24px -12px rgba(0,0,0,.45),0 0 0 0 rgba(245,218,191,.55)}50%{box-shadow:0 12px 24px -12px rgba(0,0,0,.45),0 0 0 8px rgba(245,218,191,0)}}
+@media (min-width:600px){
+  .hero-price{padding:24px 26px 22px}
+}
+@media (min-width:900px){
+  h1{font-size:clamp(52px,4.8vw,70px)}
+  .hero .hero-grid{align-items:start}
+  .hero-visual{margin-top:40px}
+  .formula-quote{padding:34px 40px;margin-bottom:56px}
+}
+/* Sửa: eyebrow dài được xuống dòng; nhãn ưu đãi nằm trong khối thay vì dải chéo */
+.hero-copy{min-width:0}
+.hero .eyebrow{display:block}
+.hero .eyebrow .status-dot{margin-right:8px;vertical-align:1px}
+.hero-price::after{content:none}
+.hp-badge{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;padding:4px 12px;border-radius:99px;background:#f5dabf;color:var(--bordo);font-size:11px;font-weight:800;letter-spacing:.08em}
+.hp-special{padding-right:0}
+.hp-price{flex-wrap:wrap;font-size:clamp(40px,11.2vw,64px)}
+.hp-unit{font-size:15px;margin-bottom:.55em}
+@media (min-width:900px){
+  .hero-visual{position:sticky;top:calc(var(--header-h) + 60px);margin-top:20px}
+}
