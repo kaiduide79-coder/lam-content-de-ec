@@ -745,3 +745,37 @@ body{padding-bottom:0}
 @media (min-width:900px){
   .hero-visual{position:sticky;top:calc(var(--header-h) + 60px);margin-top:20px}
 }
+
+/* Ảnh hero có nhân vật: giữ khuôn mặt bên phải, ảnh phụ chuyển sang trái */
+.rec-window img{object-position:72% 40%}
+.rec-frame{margin-left:auto;margin-right:2%}
+.hero-detail{right:auto;left:0;top:6%;width:38%}
+.rec-frame figcaption{left:auto;right:30%;}
+.photo-note{right:0;bottom:46px}
+
+/* ===== Logo kiểu chữ ký tay ===== */
+.sign-logo{position:relative;display:inline-grid;justify-items:center;line-height:1;color:var(--bordo);padding:2px 14px 6px 2px}
+.sign-top{font-family:var(--font);font-weight:800;font-size:8.5px;letter-spacing:.42em;margin-right:-.42em;color:var(--green)}
+.sign-main{font-family:'Dancing Script','Brush Script MT','Segoe Script',cursive;font-weight:700;font-size:30px;line-height:.95;margin-top:1px;letter-spacing:.01em}
+.sign-swoosh{display:block;width:118%;height:9px;margin-top:-3px;color:var(--green)}
+.sign-star{position:absolute;right:0;bottom:4px;width:11px;height:11px;fill:var(--bordo);stroke:none}
+.sign-md .sign-top{font-size:10px}
+.sign-md .sign-main{font-size:40px}
+.sign-md .sign-swoosh{height:12px}
+.sign-md .sign-star{width:14px;height:14px}
+.brand{gap:0}
+.footer-brand{display:inline-flex}
+@media (min-width:900px){
+  .sign-sm .sign-top{font-size:9.5px}
+  .sign-sm .sign-main{font-size:34px}
+}
+/* Logo: chừa chỗ cho dấu nặng dưới chữ "ẹ" */
+.sign-main{padding-bottom:5px}
+.sign-swoosh{margin-top:0}
+/* Hero: chú thích nằm dưới khung ảnh, không che nhân vật */
+.rec-frame figcaption{left:-4%;right:auto;bottom:-30px;max-width:64%}
+.photo-note{display:none}
+@media (min-width:900px){
+  .photo-note{display:flex;right:-4%;bottom:auto;top:58%}
+}
+@media (min-width:900px){ .photo-note{display:none} }
