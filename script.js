@@ -346,3 +346,88 @@
   window.addEventListener('load', measure);
   measure();
 })();
+
+/* ---------- Đội ngũ kiểu băng poster: mỗi lần một người, trượt phải → trái ---------- */
+(() => {
+  const reel = document.querySelector('[data-reel]');
+  if (!reel) return;
+  const scroller = reel.querySelector('.reel-scroll');
+  const sticky = reel.querySelector('.reel-sticky');
+  const topBar = reel.querySelector('.reel-top');
+  const scenes = Array.from(reel.querySelectorAll('.reel-scene'));
+  const buttons = Array.from(reel.querySelectorAll('[data-reel-go]'));
+  const n = scenes.length;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let pinned = false, travel = 0, header = 64, active = -1, ticking = false;
+  // Giữ yên mỗi người ~60% quãng cuộn, chuyển cảnh ở khoảng giữa
+  const ease = f => { const x = Math.min(1, Math.max(0, (f - 0.3) / 0.4)); return x * x * (3 - 2 * x); };
+
+  function setActive(i) {
+    if (i === active) return;
+    active = i;
+    scenes.forEach((s, k) => {
+      s.classList.toggle('is-active', k === i);
+      s.setAttribute('aria-hidden', pinned && k !== i ? 'true' : 'false');
+    });
+    buttons.forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
+  }
+  function render(raw) {
+    const k = Math.min(n - 1, Math.floor(raw));
+    const p = k + ease(raw - k);
+    scenes.forEach((s, i) => {
+      const t = Math.max(-1.2, Math.min(1.2, p - i));
+      s.style.setProperty('--t', t.toFixed(4));
+      s.style.setProperty('--ta', Math.abs(t).toFixed(4));
+      s.classList.toggle('is-near', Math.abs(t) < 1);
+    });
+    reel.style.setProperty('--reel-p', (n > 1 ? p / (n - 1) : 1).toFixed(4));
+    setActive(Math.round(p));
+  }
+  function raw() {
+    const t = (header - scroller.getBoundingClientRect().top) / Math.max(1, travel);
+    return Math.min(1, Math.max(0, t)) * (n - 1);
+  }
+  function update() { ticking = false; if (pinned) render(raw()); }
+  function measure() {
+    header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 64;
+    reel.classList.remove('reel-enabled');
+    pinned = false;
+    scenes.forEach(s => { s.style.removeProperty('--t'); s.style.removeProperty('--ta'); });
+    const tallest = Math.max(...scenes.map(s => s.offsetHeight));
+    const fits = topBar.offsetHeight + tallest + 16 <= window.innerHeight - header;
+    pinned = !reduce.matches && fits;
+    if (pinned) {
+      travel = (n - 1) * Math.max(480, window.innerHeight * 0.9);
+      reel.style.setProperty('--reel-travel', Math.ceil(travel) + 'px');
+      reel.classList.add('reel-enabled');
+      active = -1;
+      render(raw());
+    } else {
+      active = -1;
+      setActive(0);
+    }
+  }
+  function go(i) {
+    i = Math.max(0, Math.min(n - 1, i));
+    if (pinned) {
+      const top = window.scrollY + scroller.getBoundingClientRect().top - header + (n > 1 ? i / (n - 1) : 0) * travel + 2;
+      window.scrollTo({ top, behavior: reduce.matches ? 'auto' : 'smooth' });
+    } else {
+      scenes[i].scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'start' });
+      setActive(i);
+    }
+  }
+  buttons.forEach(b => b.addEventListener('click', () => go(Number(b.dataset.reelGo))));
+  let sx = 0, sy = 0;
+  sticky.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  sticky.addEventListener('touchend', e => {
+    if (!pinned) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) go(active + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', measure);
+  if (reduce.addEventListener) reduce.addEventListener('change', measure);
+  window.addEventListener('load', measure);
+  measure();
+})();
