@@ -141,6 +141,82 @@
     });
   }
 
+
+  /* ---------- Cast: natural vertical scrolling, horizontal character entrances ---------- */
+  const cast = document.querySelector('[data-cast]');
+  const members = cast ? Array.from(cast.querySelectorAll('[data-member]')) : [];
+  const castButtons = cast ? Array.from(cast.querySelectorAll('[data-cast-go]')) : [];
+  let castTravel = 0;
+  let castHeader = 64;
+  let castWidth = 0;
+  let castActive = -1;
+  function castPosition(progress, count) {
+    const scaled = clamp(progress) * count;
+    const index = Math.min(count - 1, Math.floor(scaled));
+    const local = Math.min(1, scaled - index);
+    const rawSlide = index < count - 1 ? clamp((local - 0.82) / 0.18) : 0;
+    const slide = rawSlide * rawSlide * (3 - 2 * rawSlide);
+    return { index, slide, depth: 1 - clamp((local - 0.48) / 0.28) };
+  }
+  function setCastActive(index) {
+    if (castActive === index) return;
+    castActive = index;
+    castButtons.forEach((button, i) => {
+      if (i === index) button.setAttribute('aria-current', 'true');
+      else button.removeAttribute('aria-current');
+    });
+  }
+  function updateCast() {
+    if (!cast || !cast.classList.contains('cast-enabled')) return;
+    const progress = clamp((castHeader - cast.getBoundingClientRect().top) / Math.max(1, castTravel));
+    const state = castPosition(progress, members.length);
+    cast.style.setProperty('--cast-x', (-(state.index + state.slide) * castWidth).toFixed(2) + 'px');
+    cast.style.setProperty('--cast-progress', progress.toFixed(4));
+    members.forEach((member, i) => member.style.setProperty('--depth', i < state.index ? 0 : i === state.index ? state.depth.toFixed(3) : 1));
+    setCastActive(Math.min(members.length - 1, state.index + (state.slide > 0.5 ? 1 : 0)));
+  }
+  function measureCast() {
+    if (!cast) return;
+    cast.classList.remove('cast-enabled', 'cast-compact');
+    cast.style.removeProperty('--scene-height');
+    if (reduceMotion.matches || !canObserve) return;
+    cast.classList.add('cast-enabled');
+    const castShell = cast.querySelector('.cast-shell');
+    castShell.style.height = 'auto';
+    castHeader = parseFloat(getComputedStyle(root).getPropertyValue('--header-h')) || 64;
+    const layouts = members.map(m => m.querySelector('.cast-layout'));
+    let height = Math.max(...layouts.map(m => m.getBoundingClientRect().height));
+    const chrome = cast.querySelector('.cast-shell').getBoundingClientRect().height - cast.querySelector('.cast-viewport').getBoundingClientRect().height;
+    if (height + chrome > window.innerHeight - castHeader - 8 && window.innerWidth < 900) {
+      cast.classList.add('cast-compact');
+      height = Math.max(...layouts.map(m => m.getBoundingClientRect().height));
+    }
+    castShell.style.removeProperty('height');
+    // Long bios, text zoom and short viewports always get a fully readable linear layout.
+    if (height + chrome > window.innerHeight - castHeader - 8) {
+      cast.classList.remove('cast-enabled');
+      setCastActive(0);
+      return;
+    }
+    castWidth = cast.querySelector('.cast-viewport').getBoundingClientRect().width;
+    castTravel = members.length * Math.max(600, window.innerHeight * 0.95);
+    cast.style.setProperty('--scene-height', Math.ceil(height) + 'px');
+    cast.style.setProperty('--cast-height', Math.ceil(height + chrome) + 'px');
+    cast.style.setProperty('--cast-travel', Math.ceil(castTravel) + 'px');
+    updateCast();
+  }
+  castButtons.forEach(button => button.addEventListener('click', () => {
+    const index = Number(button.dataset.castGo);
+    if (cast.classList.contains('cast-enabled')) {
+      window.scrollTo({ top: window.scrollY + cast.getBoundingClientRect().top - castHeader + (index + 0.15) / members.length * castTravel, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+    } else members[index].scrollIntoView({ behavior: 'auto', block: 'start' });
+  }));
+  window.addEventListener('resize', measureCast, { passive: true });
+  window.addEventListener('load', measureCast);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureCast);
+  if (reduceMotion.addEventListener) reduceMotion.addEventListener('change', measureCast);
+  measureCast();
+
   /* ---------- Thanh tiến độ đọc ---------- */
   let frame = 0;
   const onScroll = () => {
@@ -148,6 +224,7 @@
     const max = root.scrollHeight - window.innerHeight;
     root.style.setProperty('--reading-progress', max > 0 ? clamp(window.scrollY / max).toFixed(4) : 0);
     updateScrub();
+    updateCast();
   };
   const queue = () => { if (!frame) frame = requestAnimationFrame(onScroll); };
   window.addEventListener('scroll', queue, { passive: true });
@@ -189,4 +266,83 @@
   window.addEventListener('scroll', queue, { passive: true });
   window.addEventListener('resize', () => { measure(); queue(); }, { passive: true });
   window.addEventListener('load', () => { measure(); queue(); });
+})();
+
+/* ---------- Đội ngũ: mảng xiên trượt phải → trái theo cuộn / vuốt ---------- */
+(() => {
+  const crew = document.querySelector('[data-crew]');
+  if (!crew) return;
+  const scroller = crew.querySelector('.crew-scroll');
+  const sticky = crew.querySelector('.crew-sticky');
+  const stage = crew.querySelector('.crew-stage');
+  const viewport = crew.querySelector('.crew-viewport');
+  const track = crew.querySelector('.crew-track');
+  const cards = Array.from(crew.querySelectorAll('.crew-card'));
+  const bios = Array.from(crew.querySelectorAll('.crew-bio'));
+  const buttons = Array.from(crew.querySelectorAll('[data-crew-go]'));
+  const n = cards.length;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let active = -1, pinned = false, travel = 0, header = 64, step = 0, cardW = 0, target = 0, ticking = false;
+
+  function setActive(i) {
+    if (i === active) return;
+    active = i;
+    cards.forEach((c, k) => c.classList.toggle('is-active', k === i));
+    bios.forEach((b, k) => { b.classList.toggle('is-active', k === i); b.setAttribute('aria-hidden', k === i ? 'false' : 'true'); });
+    buttons.forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
+  }
+  function place(p) {
+    track.style.transform = 'translate3d(' + (target - cardW / 2 - p * step).toFixed(1) + 'px,0,0)';
+    crew.style.setProperty('--crew-p', (n > 1 ? p / (n - 1) : 1).toFixed(4));
+    setActive(Math.max(0, Math.min(n - 1, Math.round(p))));
+  }
+  function progress() {
+    const t = (header - scroller.getBoundingClientRect().top) / Math.max(1, travel);
+    return Math.min(1, Math.max(0, t)) * (n - 1);
+  }
+  function update() { ticking = false; if (pinned) place(progress()); }
+  function measure() {
+    header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 64;
+    crew.classList.remove('crew-enabled', 'crew-carousel');
+    cardW = cards[0].offsetWidth;
+    step = n > 1 ? cards[1].offsetLeft - cards[0].offsetLeft : 0;
+    target = viewport.clientWidth * (window.innerWidth < 900 ? 0.36 : 0.4);
+    const fits = stage.getBoundingClientRect().height <= window.innerHeight - header - 8;
+    pinned = !reduce.matches && fits;
+    if (pinned) {
+      travel = (n - 1) * Math.max(420, window.innerHeight * 0.75);
+      crew.style.setProperty('--crew-travel', Math.ceil(travel) + 'px');
+      crew.classList.add('crew-enabled');
+      place(progress());
+    } else {
+      crew.classList.add('crew-carousel');
+      place(active < 0 ? 0 : active);
+    }
+  }
+  function go(i) {
+    i = Math.max(0, Math.min(n - 1, i));
+    if (pinned) {
+      const top = window.scrollY + scroller.getBoundingClientRect().top - header + (n > 1 ? i / (n - 1) : 0) * travel + 2;
+      window.scrollTo({ top, behavior: reduce.matches ? 'auto' : 'smooth' });
+    } else place(i);
+  }
+  buttons.forEach(b => b.addEventListener('click', () => go(Number(b.dataset.crewGo))));
+  crew.querySelector('.crew-dots').addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const i = active + (e.key === 'ArrowRight' ? 1 : -1);
+      go(i); const b = buttons[Math.max(0, Math.min(n - 1, i))]; if (b) b.focus();
+    }
+  });
+  let sx = 0, sy = 0;
+  sticky.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  sticky.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) go(active + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+  window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', measure);
+  if (reduce.addEventListener) reduce.addEventListener('change', measure);
+  window.addEventListener('load', measure);
+  measure();
 })();
